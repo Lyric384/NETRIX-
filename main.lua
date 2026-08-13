@@ -66,7 +66,7 @@ FloatingButton.BackgroundTransparency = 0
 FloatingButton.BorderSizePixel = 0
 
 -- Imagem
-FloatingButton.Image = "rbxassetid://109965584967630"
+FloatingButton.Image = "rbxthumb://type=Asset&id=109965584967630&w=420&h=420"
 FloatingButton.ScaleType = Enum.ScaleType.Crop
 
 -- Cantos levemente arredondados
