@@ -7,6 +7,9 @@ local Window = Rayfield:CreateWindow({
     LoadingTitle = "Carregando NETRIX...",
     LoadingSubtitle = "by NETRIX",
 
+    ShowText = "",
+    DisableRayfieldPrompts = true,
+
     ConfigurationSaving = {
         Enabled = false,
     },
@@ -19,17 +22,24 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- =========================================================
--- BOTÃO FLUTUANTE NETRIX
+-- SERVIÇOS
 -- =========================================================
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- =========================================================
+-- FLUTUANTE NETRIX
+-- =========================================================
 
 local FloatingGui = Instance.new("ScreenGui")
-FloatingGui.Name = "NetrixFloatingButton"
+FloatingGui.Name = "NETRIX_Floating"
 FloatingGui.ResetOnSpawn = false
+FloatingGui.IgnoreGuiInset = true
 FloatingGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 pcall(function()
@@ -41,78 +51,88 @@ if not FloatingGui.Parent then
 end
 
 local FloatingButton = Instance.new("ImageButton")
-FloatingButton.Name = "NetrixFloat"
+FloatingButton.Name = "NETRIX"
 FloatingButton.Parent = FloatingGui
-FloatingButton.Size = UDim2.new(0, 85, 0, 85)
-FloatingButton.Position = UDim2.new(1, -35, 1, -120)
-FloatingButton.AnchorPoint = Vector2.new(1, 1)
 
-FloatingButton.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-FloatingButton.BackgroundTransparency = 0.1
+-- Tamanho pequeno e quadrado
+FloatingButton.Size = UDim2.fromOffset(58, 58)
+
+-- Posição inicial
+FloatingButton.Position = UDim2.new(0, 20, 0.5, 0)
+
+-- Visual
+FloatingButton.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+FloatingButton.BackgroundTransparency = 0
+FloatingButton.BorderSizePixel = 0
+
+-- Imagem
 FloatingButton.Image = "rbxassetid://109965584967630"
 FloatingButton.ScaleType = Enum.ScaleType.Crop
-FloatingButton.AutoButtonColor = true
 
+-- Cantos levemente arredondados
 local FloatingCorner = Instance.new("UICorner")
-FloatingCorner.CornerRadius = UDim.new(1, 0)
+FloatingCorner.CornerRadius = UDim.new(0, 10)
 FloatingCorner.Parent = FloatingButton
 
+-- Borda NETRIX
 local FloatingStroke = Instance.new("UIStroke")
 FloatingStroke.Thickness = 2
-FloatingStroke.Color = Color3.fromRGB(150, 0, 255)
-FloatingStroke.Transparency = 0.1
+FloatingStroke.Color = Color3.fromRGB(145, 0, 255)
+FloatingStroke.Transparency = 0
 FloatingStroke.Parent = FloatingButton
 
 -- =========================================================
--- ARRASTAR BOTÃO FLUTUANTE
+-- ARRASTAR FLUTUANTE
 -- =========================================================
 
 local Dragging = false
-local DragStart
-local StartPosition
-local WasDragged = false
+local DragStart = nil
+local StartPosition = nil
+local Moved = false
 
-local function UpdateFloatingButton(input)
-    local Delta = input.Position - DragStart
+FloatingButton.InputBegan:Connect(function(Input)
 
-    FloatingButton.Position = UDim2.new(
-        StartPosition.X.Scale,
-        StartPosition.X.Offset + Delta.X,
-        StartPosition.Y.Scale,
-        StartPosition.Y.Offset + Delta.Y
-    )
-end
-
-FloatingButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
+    if Input.UserInputType == Enum.UserInputType.Touch
+        or Input.UserInputType == Enum.UserInputType.MouseButton1 then
 
         Dragging = true
-        WasDragged = false
-        DragStart = input.Position
+        Moved = false
+
+        DragStart = Input.Position
         StartPosition = FloatingButton.Position
 
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
+        Input.Changed:Connect(function()
+
+            if Input.UserInputState == Enum.UserInputState.End then
                 Dragging = false
             end
+
         end)
     end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
-    if Dragging and (
-        input.UserInputType == Enum.UserInputType.MouseMovement
-        or input.UserInputType == Enum.UserInputType.Touch
-    ) then
+UserInputService.InputChanged:Connect(function(Input)
 
-        local Delta = input.Position - DragStart
+    if not Dragging then
+        return
+    end
+
+    if Input.UserInputType == Enum.UserInputType.Touch
+        or Input.UserInputType == Enum.UserInputType.MouseMovement then
+
+        local Delta = Input.Position - DragStart
 
         if Delta.Magnitude > 5 then
-            WasDragged = true
+            Moved = true
         end
 
-        UpdateFloatingButton(input)
+        FloatingButton.Position = UDim2.new(
+            StartPosition.X.Scale,
+            StartPosition.X.Offset + Delta.X,
+
+            StartPosition.Y.Scale,
+            StartPosition.Y.Offset + Delta.Y
+        )
     end
 end)
 
@@ -120,24 +140,16 @@ end)
 -- ABRIR / FECHAR PAINEL
 -- =========================================================
 
-local PanelVisible = true
-
 FloatingButton.Activated:Connect(function()
-    if WasDragged then
-        WasDragged = false
+
+    if Moved then
+        Moved = false
         return
     end
 
-    PanelVisible = not PanelVisible
-    Rayfield:SetVisibility(PanelVisible)
+    Rayfield:SetVisibility(not Rayfield:IsVisible())
+
 end)
-
--- =========================================================
--- SERVIÇOS
--- =========================================================
-
-local Camera = workspace.CurrentCamera
-local RunService = game:GetService("RunService")
 
 -- =========================================================
 -- VARIÁVEIS
@@ -150,7 +162,6 @@ local FOVVisible = true
 local GrabEnabled = false
 local TargetPlayer = nil
 
--- ESP
 local ESPEnabled = false
 local ESPColor = Color3.fromRGB(255, 0, 50)
 
@@ -159,6 +170,7 @@ local ESPColor = Color3.fromRGB(255, 0, 50)
 -- =========================================================
 
 local function AddESP(player)
+
     if player == LocalPlayer then
         return
     end
@@ -174,19 +186,25 @@ local function AddESP(player)
     end
 
     local highlight = Instance.new("Highlight")
+
     highlight.Name = "NetrixESP"
     highlight.FillColor = ESPColor
     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+
     highlight.FillTransparency = 0.5
     highlight.OutlineTransparency = 0
+
     highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     highlight.Adornee = character
     highlight.Parent = character
 end
 
 local function RemoveESP(player)
+
     if player.Character then
-        local highlight = player.Character:FindFirstChild("NetrixESP")
+
+        local highlight =
+            player.Character:FindFirstChild("NetrixESP")
 
         if highlight then
             highlight:Destroy()
@@ -195,28 +213,35 @@ local function RemoveESP(player)
 end
 
 local function UpdateESP()
+
     for _, player in ipairs(Players:GetPlayers()) do
+
         if player ~= LocalPlayer then
+
             if ESPEnabled then
                 AddESP(player)
             else
                 RemoveESP(player)
             end
+
         end
     end
 end
 
 local function SetupPlayerESP(player)
+
     if player == LocalPlayer then
         return
     end
 
     player.CharacterAdded:Connect(function()
+
         task.wait(0.5)
 
         if ESPEnabled then
             AddESP(player)
         end
+
     end)
 
     if ESPEnabled then
@@ -240,9 +265,10 @@ end)
 -- FOV
 -- =========================================================
 
-local FOVCircle
+local FOVCircle = nil
 
 if Drawing and Drawing.new then
+
     FOVCircle = Drawing.new("Circle")
 
     FOVCircle.Color = Color3.fromRGB(255, 0, 50)
@@ -251,13 +277,15 @@ if Drawing and Drawing.new then
     FOVCircle.Radius = FOVRadius
     FOVCircle.Filled = false
     FOVCircle.Visible = false
+
 end
 
 -- =========================================================
--- ENCONTRAR JOGADOR NO FOV
+-- ENCONTRAR PLAYER NO FOV
 -- =========================================================
 
 local function GetClosestPlayerInFOV()
+
     local closest = nil
     local shortestDistance = FOVRadius
 
@@ -268,7 +296,8 @@ local function GetClosestPlayerInFOV()
             and player.Character:FindFirstChild("Head")
             and player.Character:FindFirstChildOfClass("Humanoid") then
 
-            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+            local humanoid =
+                player.Character:FindFirstChildOfClass("Humanoid")
 
             if humanoid and humanoid.Health > 0 then
 
@@ -285,11 +314,18 @@ local function GetClosestPlayerInFOV()
                     )
 
                     local distance =
-                        (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+                        (
+                            Vector2.new(
+                                screenPos.X,
+                                screenPos.Y
+                            ) - mousePos
+                        ).Magnitude
 
                     if distance < shortestDistance then
+
                         shortestDistance = distance
                         closest = player
+
                     end
                 end
             end
@@ -306,15 +342,19 @@ end
 RunService.RenderStepped:Connect(function()
 
     if FOVCircle then
+
         FOVCircle.Position = Vector2.new(
             Camera.ViewportSize.X / 2,
             Camera.ViewportSize.Y / 2
         )
 
         FOVCircle.Radius = FOVRadius
-        FOVCircle.Visible = FOVVisible and AimbotEnabled
+
+        FOVCircle.Visible =
+            FOVVisible and AimbotEnabled
     end
 
+    -- AIMBOT
     if AimbotEnabled then
 
         local target = GetClosestPlayerInFOV()
@@ -330,6 +370,7 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
+    -- GRAB
     if GrabEnabled then
 
         if not TargetPlayer
@@ -352,133 +393,216 @@ RunService.RenderStepped:Connect(function()
                 CFrame.new(0, 0, -2)
         end
     end
+
 end)
 
 -- =========================================================
 -- ABA COMBATE
 -- =========================================================
 
-local CombatTab = Window:CreateTab("Combate", 4483362458)
+local CombatTab =
+    Window:CreateTab("Combate", 4483362458)
 
-local AimbotToggle = CombatTab:CreateToggle({
-    Name = "Mira Automática na Cabeça",
-    CurrentValue = false,
-    Flag = "AimbotHead",
+-- AIMBOT
 
-    Callback = function(Value)
-        AimbotEnabled = Value
-    end,
-})
+local AimbotToggle =
+    CombatTab:CreateToggle({
 
-local FOVSlider = CombatTab:CreateSlider({
-    Name = "Tamanho do Círculo (FOV)",
-    Range = {50, 500},
-    Increment = 10,
-    Suffix = "px",
-    CurrentValue = 150,
-    Flag = "FOVSize",
+        Name = "Mira Automática na Cabeça",
 
-    Callback = function(Value)
-        FOVRadius = Value
-    end,
-})
+        CurrentValue = false,
 
-local FOVToggle = CombatTab:CreateToggle({
-    Name = "Mostrar Círculo na Tela",
-    CurrentValue = true,
-    Flag = "DrawFOV",
+        Flag = "AimbotHead",
 
-    Callback = function(Value)
-        FOVVisible = Value
-    end,
-})
+        Callback = function(Value)
 
-local ESPToggle = CombatTab:CreateToggle({
-    Name = "ESP Players",
-    CurrentValue = false,
-    Flag = "ESPPlayers",
+            AimbotEnabled = Value
 
-    Callback = function(Value)
-        ESPEnabled = Value
-        UpdateESP()
-    end,
-})
+        end,
+    })
 
-local GrabToggle = CombatTab:CreateToggle({
-    Name = "Agarrar Player (Grab & Hold)",
-    CurrentValue = false,
-    Flag = "GrabPlayer",
+-- FOV
 
-    Callback = function(Value)
-        GrabEnabled = Value
+local FOVSlider =
+    CombatTab:CreateSlider({
 
-        if not Value then
-            TargetPlayer = nil
-        end
-    end,
-})
+        Name = "Tamanho do Círculo (FOV)",
+
+        Range = {50, 500},
+
+        Increment = 10,
+
+        Suffix = "px",
+
+        CurrentValue = 150,
+
+        Flag = "FOVSize",
+
+        Callback = function(Value)
+
+            FOVRadius = Value
+
+        end,
+    })
+
+-- MOSTRAR FOV
+
+local FOVToggle =
+    CombatTab:CreateToggle({
+
+        Name = "Mostrar Círculo na Tela",
+
+        CurrentValue = true,
+
+        Flag = "DrawFOV",
+
+        Callback = function(Value)
+
+            FOVVisible = Value
+
+        end,
+    })
+
+-- ESP
+
+local ESPToggle =
+    CombatTab:CreateToggle({
+
+        Name = "ESP Players",
+
+        CurrentValue = false,
+
+        Flag = "ESPPlayers",
+
+        Callback = function(Value)
+
+            ESPEnabled = Value
+
+            UpdateESP()
+
+        end,
+    })
+
+-- GRAB
+
+local GrabToggle =
+    CombatTab:CreateToggle({
+
+        Name = "Agarrar Player (Grab & Hold)",
+
+        CurrentValue = false,
+
+        Flag = "GrabPlayer",
+
+        Callback = function(Value)
+
+            GrabEnabled = Value
+
+            if not Value then
+                TargetPlayer = nil
+            end
+
+        end,
+    })
 
 -- =========================================================
--- JOIN DISCORD
+-- DISCORD
 -- =========================================================
 
-local DiscordButton = CombatTab:CreateButton({
-    Name = "Join Discord",
+local DiscordButton =
+    CombatTab:CreateButton({
 
-    Callback = function()
+        Name = "Join Discord",
 
-        local DiscordLink = "https://discord.gg/5TFHuucxgw"
+        Callback = function()
 
-        if setclipboard then
-            setclipboard(DiscordLink)
+            local DiscordLink =
+                "https://discord.gg/5TFHuucxgw"
 
-            Rayfield:Notify({
-                Title = "NETRIX",
-                Content = "Link do Discord copiado!",
-                Duration = 5,
-                Image = 4483362458,
-            })
-        else
-            Rayfield:Notify({
-                Title = "NETRIX",
-                Content = DiscordLink,
-                Duration = 5,
-                Image = 4483362458,
-            })
-        end
-    end,
-})
+            if setclipboard then
+
+                setclipboard(DiscordLink)
+
+                Rayfield:Notify({
+
+                    Title = "NETRIX",
+
+                    Content =
+                        "Link do Discord copiado!",
+
+                    Duration = 5,
+
+                    Image = 4483362458,
+
+                })
+
+            else
+
+                Rayfield:Notify({
+
+                    Title = "NETRIX",
+
+                    Content = DiscordLink,
+
+                    Duration = 5,
+
+                    Image = 4483362458,
+
+                })
+
+            end
+
+        end,
+    })
 
 -- =========================================================
 -- ABA MOVIMENTAÇÃO
 -- =========================================================
 
-local MovementTab = Window:CreateTab("Movimentação", 4483362458)
+local MovementTab =
+    Window:CreateTab(
+        "Movimentação",
+        4483362458
+    )
 
-local SpeedSlider = MovementTab:CreateSlider({
-    Name = "Velocidade (WalkSpeed)",
-    Range = {16, 120},
-    Increment = 2,
-    CurrentValue = 16,
-    Flag = "WalkSpeed",
+local SpeedSlider =
+    MovementTab:CreateSlider({
 
-    Callback = function(Value)
+        Name = "Velocidade (WalkSpeed)",
 
-        if LocalPlayer.Character
-            and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        Range = {16, 120},
 
-            LocalPlayer.Character.Humanoid.WalkSpeed = Value
-        end
-    end,
-})
+        Increment = 2,
+
+        CurrentValue = 16,
+
+        Flag = "WalkSpeed",
+
+        Callback = function(Value)
+
+            if LocalPlayer.Character
+                and LocalPlayer.Character:FindFirstChild("Humanoid") then
+
+                LocalPlayer.Character.Humanoid.WalkSpeed =
+                    Value
+
+            end
+        end,
+    })
 
 -- =========================================================
 -- NOTIFICAÇÃO
 -- =========================================================
 
 Rayfield:Notify({
+
     Title = "NETRIX",
-    Content = "Painel Fluxo PVP carregado com sucesso!",
+
+    Content =
+        "Painel Fluxo PVP carregado com sucesso!",
+
     Duration = 5,
+
     Image = 4483362458,
+
 })
