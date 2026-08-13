@@ -7,7 +7,7 @@ local Window = Rayfield:CreateWindow({
     LoadingTitle = "Carregando NETRIX...",
     LoadingSubtitle = "by NETRIX",
 
-    ShowText = "",
+    -- Remove o prompt/flutuante "Show Rayfield"
     DisableRayfieldPrompts = true,
 
     ConfigurationSaving = {
@@ -54,27 +54,23 @@ local FloatingButton = Instance.new("ImageButton")
 FloatingButton.Name = "NETRIX"
 FloatingButton.Parent = FloatingGui
 
--- Tamanho pequeno e quadrado
 FloatingButton.Size = UDim2.fromOffset(58, 58)
-
--- Posição inicial
 FloatingButton.Position = UDim2.new(0, 20, 0.5, 0)
 
--- Visual
 FloatingButton.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
 FloatingButton.BackgroundTransparency = 0
 FloatingButton.BorderSizePixel = 0
 
--- Imagem
-FloatingButton.Image = "rbxthumb://type=Asset&id=109965584967630&w=420&h=420"
+FloatingButton.Image =
+    "rbxthumb://type=Asset&id=109965584967630&w=420&h=420"
+
+FloatingButton.ImageTransparency = 0
 FloatingButton.ScaleType = Enum.ScaleType.Crop
 
--- Cantos levemente arredondados
 local FloatingCorner = Instance.new("UICorner")
 FloatingCorner.CornerRadius = UDim.new(0, 10)
 FloatingCorner.Parent = FloatingButton
 
--- Borda NETRIX
 local FloatingStroke = Instance.new("UIStroke")
 FloatingStroke.Thickness = 2
 FloatingStroke.Color = Color3.fromRGB(145, 0, 255)
@@ -129,7 +125,6 @@ UserInputService.InputChanged:Connect(function(Input)
         FloatingButton.Position = UDim2.new(
             StartPosition.X.Scale,
             StartPosition.X.Offset + Delta.X,
-
             StartPosition.Y.Scale,
             StartPosition.Y.Offset + Delta.Y
         )
@@ -190,13 +185,12 @@ local function AddESP(player)
     highlight.Name = "NetrixESP"
     highlight.FillColor = ESPColor
     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-
     highlight.FillTransparency = 0.5
     highlight.OutlineTransparency = 0
-
     highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     highlight.Adornee = character
     highlight.Parent = character
+
 end
 
 local function RemoveESP(player)
@@ -209,6 +203,7 @@ local function RemoveESP(player)
         if highlight then
             highlight:Destroy()
         end
+
     end
 end
 
@@ -225,6 +220,7 @@ local function UpdateESP()
             end
 
         end
+
     end
 end
 
@@ -247,6 +243,7 @@ local function SetupPlayerESP(player)
     if ESPEnabled then
         AddESP(player)
     end
+
 end
 
 for _, player in ipairs(Players:GetPlayers()) do
@@ -333,6 +330,7 @@ local function GetClosestPlayerInFOV()
     end
 
     return closest
+
 end
 
 -- =========================================================
@@ -352,9 +350,9 @@ RunService.RenderStepped:Connect(function()
 
         FOVCircle.Visible =
             FOVVisible and AimbotEnabled
+
     end
 
-    -- AIMBOT
     if AimbotEnabled then
 
         local target = GetClosestPlayerInFOV()
@@ -367,10 +365,11 @@ RunService.RenderStepped:Connect(function()
                 Camera.CFrame.Position,
                 target.Character.Head.Position
             )
+
         end
+
     end
 
-    -- GRAB
     if GrabEnabled then
 
         if not TargetPlayer
@@ -380,6 +379,7 @@ RunService.RenderStepped:Connect(function()
             or TargetPlayer.Character:FindFirstChildOfClass("Humanoid").Health <= 0 then
 
             TargetPlayer = GetClosestPlayerInFOV()
+
         end
 
         if TargetPlayer
@@ -391,6 +391,7 @@ RunService.RenderStepped:Connect(function()
             LocalPlayer.Character.HumanoidRootPart.CFrame =
                 TargetPlayer.Character.HumanoidRootPart.CFrame *
                 CFrame.new(0, 0, -2)
+
         end
     end
 
@@ -402,8 +403,6 @@ end)
 
 local CombatTab =
     Window:CreateTab("Combate", 4483362458)
-
--- AIMBOT
 
 local AimbotToggle =
     CombatTab:CreateToggle({
@@ -420,8 +419,6 @@ local AimbotToggle =
 
         end,
     })
-
--- FOV
 
 local FOVSlider =
     CombatTab:CreateSlider({
@@ -445,8 +442,6 @@ local FOVSlider =
         end,
     })
 
--- MOSTRAR FOV
-
 local FOVToggle =
     CombatTab:CreateToggle({
 
@@ -463,8 +458,6 @@ local FOVToggle =
         end,
     })
 
--- ESP
-
 local ESPToggle =
     CombatTab:CreateToggle({
 
@@ -477,13 +470,10 @@ local ESPToggle =
         Callback = function(Value)
 
             ESPEnabled = Value
-
             UpdateESP()
 
         end,
     })
-
--- GRAB
 
 local GrabToggle =
     CombatTab:CreateToggle({
@@ -587,6 +577,7 @@ local SpeedSlider =
                     Value
 
             end
+
         end,
     })
 
