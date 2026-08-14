@@ -2,6 +2,18 @@
 
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- =========================================================
+-- RAYFIELD
+-- =========================================================
+
 local Window = Rayfield:CreateWindow({
     Name = "NETRIX | Fluxo PVP Hub",
     LoadingTitle = "Carregando NETRIX...",
@@ -21,70 +33,107 @@ local Window = Rayfield:CreateWindow({
 })
 
 -- =========================================================
--- REMOVE O "SHOW RAYFIELD"
+-- REMOVER "SHOW RAYFIELD"
 -- =========================================================
 
 local function RemoveShowRayfield()
+
     pcall(function()
 
-        -- Prompt dentro do Rayfield
-        local Prompt = Rayfield:FindFirstChild("Prompt")
+        local function CheckObject(Object)
 
-        if Prompt then
-            Prompt:Destroy()
-        end
-
-        -- Procura qualquer Prompt dentro do Rayfield
-        for _, Object in ipairs(Rayfield:GetDescendants()) do
+            -- Remove objetos chamados Prompt
             if Object.Name == "Prompt" then
                 Object:Destroy()
+                return
             end
+
+            -- Remove elementos que contenham "Show Rayfield"
+            if Object:IsA("TextLabel")
+                or Object:IsA("TextButton")
+                or Object:IsA("TextBox") then
+
+                local Text = tostring(Object.Text)
+
+                if string.find(
+                    Text,
+                    "Show Rayfield",
+                    1,
+                    true
+                ) then
+
+                    Object:Destroy()
+                    return
+                end
+            end
+
+            -- Alguns elementos podem possuir atributo relacionado
+            if Object:GetAttribute("Text") == "Show Rayfield" then
+                Object:Destroy()
+                return
+            end
+
         end
 
-        -- Procura Prompt nos ScreenGuis do CoreGui
-        local CoreGui = game:GetService("CoreGui")
-
+        -- CoreGui
         for _, Gui in ipairs(CoreGui:GetChildren()) do
 
             if Gui:IsA("ScreenGui") then
 
-                for _, Object in ipairs(Gui:GetDescendants()) do
+                for _, Object in ipairs(
+                    Gui:GetDescendants()
+                ) do
 
-                    if Object.Name == "Prompt" then
-                        Object:Destroy()
-                    end
+                    CheckObject(Object)
 
                 end
+
             end
         end
+
+        -- PlayerGui
+        local PlayerGui =
+            LocalPlayer:FindFirstChild("PlayerGui")
+
+        if PlayerGui then
+
+            for _, Object in ipairs(
+                PlayerGui:GetDescendants()
+            ) do
+
+                CheckObject(Object)
+
+            end
+
+        end
+
     end)
+
 end
 
--- Executa depois da criação da interface
-task.defer(function()
-    task.wait(0.2)
-    RemoveShowRayfield()
-end)
-
--- Executa novamente para impedir que o Rayfield recrie o botão
+-- Remove várias vezes durante o carregamento
 task.spawn(function()
 
-    while task.wait(1) do
+    for i = 1, 30 do
+
         RemoveShowRayfield()
+
+        task.wait(0.1)
+
     end
 
 end)
 
--- =========================================================
--- SERVIÇOS
--- =========================================================
+-- Continua removendo caso o Rayfield recrie
+task.spawn(function()
 
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+    while task.wait(0.5) do
 
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
+        RemoveShowRayfield()
+
+    end
+
+end)
 
 -- =========================================================
 -- FLUTUANTE NETRIX
@@ -95,23 +144,29 @@ local FloatingGui = Instance.new("ScreenGui")
 FloatingGui.Name = "NETRIX_Floating"
 FloatingGui.ResetOnSpawn = false
 FloatingGui.IgnoreGuiInset = true
-FloatingGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+FloatingGui.ZIndexBehavior =
+    Enum.ZIndexBehavior.Sibling
 
 pcall(function()
-    FloatingGui.Parent = game:GetService("CoreGui")
+    FloatingGui.Parent = CoreGui
 end)
 
 if not FloatingGui.Parent then
-    FloatingGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+    FloatingGui.Parent =
+        LocalPlayer:WaitForChild("PlayerGui")
+
 end
 
-local FloatingButton = Instance.new("ImageButton")
+local FloatingButton =
+    Instance.new("ImageButton")
 
 FloatingButton.Name = "NETRIX"
 FloatingButton.Parent = FloatingGui
 
 -- Pequeno e quadrado
-FloatingButton.Size = UDim2.fromOffset(58, 58)
+FloatingButton.Size =
+    UDim2.fromOffset(58, 58)
 
 FloatingButton.Position =
     UDim2.new(0, 20, 0.5, 0)
@@ -122,31 +177,34 @@ FloatingButton.BackgroundColor3 =
 FloatingButton.BackgroundTransparency = 0
 FloatingButton.BorderSizePixel = 0
 
--- Imagem
+-- Imagem NETRIX
 FloatingButton.Image =
     "rbxthumb://type=Asset&id=109965584967630&w=420&h=420"
 
 FloatingButton.ImageTransparency = 0
-FloatingButton.ScaleType = Enum.ScaleType.Crop
+FloatingButton.ScaleType =
+    Enum.ScaleType.Crop
 
--- Cantos
-local FloatingCorner = Instance.new("UICorner")
+-- Cantos arredondados
+local FloatingCorner =
+    Instance.new("UICorner")
 
 FloatingCorner.CornerRadius =
     UDim.new(0, 10)
 
-FloatingCorner.Parent = FloatingButton
+FloatingCorner.Parent =
+    FloatingButton
 
--- Borda
-local FloatingStroke = Instance.new("UIStroke")
+-- Borda roxa
+local FloatingStroke =
+    Instance.new("UIStroke")
 
 FloatingStroke.Thickness = 2
 FloatingStroke.Color =
     Color3.fromRGB(145, 0, 255)
 
-FloatingStroke.Transparency = 0
-
-FloatingStroke.Parent = FloatingButton
+FloatingStroke.Parent =
+    FloatingButton
 
 -- =========================================================
 -- ARRASTAR FLUTUANTE
@@ -157,80 +215,97 @@ local DragStart = nil
 local StartPosition = nil
 local Moved = false
 
-FloatingButton.InputBegan:Connect(function(Input)
+FloatingButton.InputBegan:Connect(
+    function(Input)
 
-    if Input.UserInputType == Enum.UserInputType.Touch
-        or Input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if Input.UserInputType ==
+            Enum.UserInputType.Touch
 
-        Dragging = true
-        Moved = false
+            or Input.UserInputType ==
+            Enum.UserInputType.MouseButton1 then
 
-        DragStart = Input.Position
-        StartPosition = FloatingButton.Position
+            Dragging = true
+            Moved = false
 
-        Input.Changed:Connect(function()
+            DragStart =
+                Input.Position
 
-            if Input.UserInputState ==
-                Enum.UserInputState.End then
+            StartPosition =
+                FloatingButton.Position
 
-                Dragging = false
+            Input.Changed:Connect(
+                function()
 
-            end
+                    if Input.UserInputState ==
+                        Enum.UserInputState.End then
 
-        end)
+                        Dragging = false
 
-    end
+                    end
 
-end)
-
-UserInputService.InputChanged:Connect(function(Input)
-
-    if not Dragging then
-        return
-    end
-
-    if Input.UserInputType ==
-        Enum.UserInputType.Touch
-
-        or Input.UserInputType ==
-        Enum.UserInputType.MouseMovement then
-
-        local Delta =
-            Input.Position - DragStart
-
-        if Delta.Magnitude > 5 then
-            Moved = true
-        end
-
-        FloatingButton.Position =
-            UDim2.new(
-                StartPosition.X.Scale,
-                StartPosition.X.Offset + Delta.X,
-
-                StartPosition.Y.Scale,
-                StartPosition.Y.Offset + Delta.Y
+                end
             )
 
-    end
+        end
 
-end)
+    end
+)
+
+UserInputService.InputChanged:Connect(
+    function(Input)
+
+        if not Dragging then
+            return
+        end
+
+        if Input.UserInputType ==
+            Enum.UserInputType.Touch
+
+            or Input.UserInputType ==
+            Enum.UserInputType.MouseMovement then
+
+            local Delta =
+                Input.Position - DragStart
+
+            if Delta.Magnitude > 5 then
+                Moved = true
+            end
+
+            FloatingButton.Position =
+                UDim2.new(
+                    StartPosition.X.Scale,
+                    StartPosition.X.Offset + Delta.X,
+
+                    StartPosition.Y.Scale,
+                    StartPosition.Y.Offset + Delta.Y
+                )
+
+        end
+
+    end
+)
 
 -- =========================================================
--- ABRIR / FECHAR PAINEL
+-- ABRIR / FECHAR NETRIX
 -- =========================================================
 
-FloatingButton.Activated:Connect(function()
+FloatingButton.Activated:Connect(
+    function()
 
-    if Moved then
-        Moved = false
-        return
+        if Moved then
+            Moved = false
+            return
+        end
+
+        Rayfield:SetVisibility(
+            not Rayfield:IsVisible()
+        )
+
+        -- Remove qualquer "Show Rayfield"
+        task.defer(RemoveShowRayfield)
+
     end
-
-    Rayfield:SetVisibility(
-        not Rayfield:IsVisible()
-    )
-
-end)
+)
 
 -- =========================================================
 -- VARIÁVEIS
@@ -258,46 +333,46 @@ local function AddESP(player)
         return
     end
 
-    local character =
+    local Character =
         player.Character
 
-    if not character then
+    if not Character then
         return
     end
 
-    if character:FindFirstChild(
+    if Character:FindFirstChild(
         "NetrixESP"
     ) then
         return
     end
 
-    local highlight =
+    local Highlight =
         Instance.new("Highlight")
 
-    highlight.Name =
+    Highlight.Name =
         "NetrixESP"
 
-    highlight.FillColor =
+    Highlight.FillColor =
         ESPColor
 
-    highlight.OutlineColor =
+    Highlight.OutlineColor =
         Color3.fromRGB(
             255,
             255,
             255
         )
 
-    highlight.FillTransparency = 0.5
-    highlight.OutlineTransparency = 0
+    Highlight.FillTransparency = 0.5
+    Highlight.OutlineTransparency = 0
 
-    highlight.DepthMode =
+    Highlight.DepthMode =
         Enum.HighlightDepthMode.AlwaysOnTop
 
-    highlight.Adornee =
-        character
+    Highlight.Adornee =
+        Character
 
-    highlight.Parent =
-        character
+    Highlight.Parent =
+        Character
 
 end
 
@@ -305,13 +380,13 @@ local function RemoveESP(player)
 
     if player.Character then
 
-        local highlight =
+        local Highlight =
             player.Character:FindFirstChild(
                 "NetrixESP"
             )
 
-        if highlight then
-            highlight:Destroy()
+        if Highlight then
+            Highlight:Destroy()
         end
 
     end
@@ -412,64 +487,60 @@ end
 
 local function GetClosestPlayerInFOV()
 
-    local closest = nil
-
-    local shortestDistance =
+    local Closest = nil
+    local ShortestDistance =
         FOVRadius
 
-    for _, player in
+    for _, Player in
         ipairs(Players:GetPlayers()) do
 
-        if player ~= LocalPlayer
-            and player.Character
-            and player.Character:FindFirstChild(
-                "Head"
-            )
-            and player.Character:FindFirstChildOfClass(
+        if Player ~= LocalPlayer
+            and Player.Character
+            and Player.Character:FindFirstChild("Head")
+            and Player.Character:FindFirstChildOfClass(
                 "Humanoid"
             ) then
 
-            local humanoid =
-                player.Character:FindFirstChildOfClass(
+            local Humanoid =
+                Player.Character:FindFirstChildOfClass(
                     "Humanoid"
                 )
 
-            if humanoid
-                and humanoid.Health > 0 then
+            if Humanoid
+                and Humanoid.Health > 0 then
 
-                local head =
-                    player.Character.Head
+                local Head =
+                    Player.Character.Head
 
-                local screenPos, onScreen =
+                local ScreenPos, OnScreen =
                     Camera:WorldToViewportPoint(
-                        head.Position
+                        Head.Position
                     )
 
-                if onScreen then
+                if OnScreen then
 
-                    local mousePos =
+                    local Center =
                         Vector2.new(
                             Camera.ViewportSize.X / 2,
                             Camera.ViewportSize.Y / 2
                         )
 
-                    local distance =
+                    local Distance =
                         (
                             Vector2.new(
-                                screenPos.X,
-                                screenPos.Y
-                            )
-                            - mousePos
+                                ScreenPos.X,
+                                ScreenPos.Y
+                            ) - Center
                         ).Magnitude
 
-                    if distance <
-                        shortestDistance then
+                    if Distance <
+                        ShortestDistance then
 
-                        shortestDistance =
-                            distance
+                        ShortestDistance =
+                            Distance
 
-                        closest =
-                            player
+                        Closest =
+                            Player
 
                     end
 
@@ -481,7 +552,7 @@ local function GetClosestPlayerInFOV()
 
     end
 
-    return closest
+    return Closest
 
 end
 
@@ -512,19 +583,19 @@ RunService.RenderStepped:Connect(
         -- AIMBOT
         if AimbotEnabled then
 
-            local target =
+            local Target =
                 GetClosestPlayerInFOV()
 
-            if target
-                and target.Character
-                and target.Character:FindFirstChild(
+            if Target
+                and Target.Character
+                and Target.Character:FindFirstChild(
                     "Head"
                 ) then
 
                 Camera.CFrame =
                     CFrame.new(
                         Camera.CFrame.Position,
-                        target.Character.Head.Position
+                        Target.Character.Head.Position
                     )
 
             end
@@ -582,8 +653,6 @@ local CombatTab =
         4483362458
     )
 
--- AIMBOT
-
 CombatTab:CreateToggle({
 
     Name =
@@ -596,14 +665,11 @@ CombatTab:CreateToggle({
 
     Callback = function(Value)
 
-        AimbotEnabled =
-            Value
+        AimbotEnabled = Value
 
-    end,
+    end
 
 })
-
--- FOV
 
 CombatTab:CreateSlider({
 
@@ -626,14 +692,11 @@ CombatTab:CreateSlider({
 
     Callback = function(Value)
 
-        FOVRadius =
-            Value
+        FOVRadius = Value
 
-    end,
+    end
 
 })
-
--- MOSTRAR FOV
 
 CombatTab:CreateToggle({
 
@@ -647,14 +710,11 @@ CombatTab:CreateToggle({
 
     Callback = function(Value)
 
-        FOVVisible =
-            Value
+        FOVVisible = Value
 
-    end,
+    end
 
 })
-
--- ESP
 
 CombatTab:CreateToggle({
 
@@ -668,16 +728,13 @@ CombatTab:CreateToggle({
 
     Callback = function(Value)
 
-        ESPEnabled =
-            Value
+        ESPEnabled = Value
 
         UpdateESP()
 
-    end,
+    end
 
 })
-
--- GRAB
 
 CombatTab:CreateToggle({
 
@@ -691,14 +748,13 @@ CombatTab:CreateToggle({
 
     Callback = function(Value)
 
-        GrabEnabled =
-            Value
+        GrabEnabled = Value
 
         if not Value then
             TargetPlayer = nil
         end
 
-    end,
+    end
 
 })
 
@@ -708,8 +764,7 @@ CombatTab:CreateToggle({
 
 CombatTab:CreateButton({
 
-    Name =
-        "Join Discord",
+    Name = "Join Discord",
 
     Callback = function()
 
@@ -724,16 +779,14 @@ CombatTab:CreateButton({
 
             Rayfield:Notify({
 
-                Title =
-                    "NETRIX",
+                Title = "NETRIX",
 
                 Content =
                     "Link do Discord copiado!",
 
                 Duration = 5,
 
-                Image =
-                    4483362458,
+                Image = 4483362458
 
             })
 
@@ -741,22 +794,20 @@ CombatTab:CreateButton({
 
             Rayfield:Notify({
 
-                Title =
-                    "NETRIX",
+                Title = "NETRIX",
 
                 Content =
                     DiscordLink,
 
                 Duration = 5,
 
-                Image =
-                    4483362458,
+                Image = 4483362458
 
             })
 
         end
 
-    end,
+    end
 
 })
 
@@ -799,7 +850,7 @@ MovementTab:CreateSlider({
 
         end
 
-    end,
+    end
 
 })
 
@@ -809,15 +860,19 @@ MovementTab:CreateSlider({
 
 Rayfield:Notify({
 
-    Title =
-        "NETRIX",
+    Title = "NETRIX",
 
     Content =
         "Painel Fluxo PVP carregado com sucesso!",
 
     Duration = 5,
 
-    Image =
-        4483362458,
+    Image = 4483362458
 
 })
+
+-- Última limpeza
+task.defer(function()
+    task.wait(1)
+    RemoveShowRayfield()
+end)
