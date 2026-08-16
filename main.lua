@@ -1,823 +1,512 @@
--- [[ RAYFIELD UI - FLUXO PVP EDITION | NETRIX ]]
-
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
-
-local Window = Rayfield:CreateWindow({
-    Name = "NETRIX | Fluxo PVP Hub",
-    LoadingTitle = "Carregando NETRIX...",
-    LoadingSubtitle = "by NETRIX",
-
-    DisableRayfieldPrompts = true,
-
-    ConfigurationSaving = {
-        Enabled = false,
-    },
-
-    Discord = {
-        Enabled = false,
-    },
-
-    KeySystem = false
-})
-
--- =========================================================
--- REMOVE O "SHOW RAYFIELD"
--- =========================================================
-
-local function RemoveShowRayfield()
-    pcall(function()
-
-        -- Prompt dentro do Rayfield
-        local Prompt = Rayfield:FindFirstChild("Prompt")
-
-        if Prompt then
-            Prompt:Destroy()
-        end
-
-        -- Procura qualquer Prompt dentro do Rayfield
-        for _, Object in ipairs(Rayfield:GetDescendants()) do
-            if Object.Name == "Prompt" then
-                Object:Destroy()
-            end
-        end
-
-        -- Procura Prompt nos ScreenGuis do CoreGui
-        local CoreGui = game:GetService("CoreGui")
-
-        for _, Gui in ipairs(CoreGui:GetChildren()) do
-
-            if Gui:IsA("ScreenGui") then
-
-                for _, Object in ipairs(Gui:GetDescendants()) do
-
-                    if Object.Name == "Prompt" then
-                        Object:Destroy()
-                    end
-
-                end
-            end
-        end
-    end)
-end
-
--- Executa depois da criação da interface
-task.defer(function()
-    task.wait(0.2)
-    RemoveShowRayfield()
-end)
-
--- Executa novamente para impedir que o Rayfield recrie o botão
-task.spawn(function()
-
-    while task.wait(1) do
-        RemoveShowRayfield()
-    end
-
-end)
-
--- =========================================================
--- SERVIÇOS
--- =========================================================
-
+-- NETRIX | Fluxo PVP Hub - Tema Roxo
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-
+local StarterGui = game:GetService("StarterGui")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- =========================================================
--- FLUTUANTE NETRIX
--- =========================================================
-
-local FloatingGui = Instance.new("ScreenGui")
-
-FloatingGui.Name = "NETRIX_Floating"
-FloatingGui.ResetOnSpawn = false
-FloatingGui.IgnoreGuiInset = true
-FloatingGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-pcall(function()
-    FloatingGui.Parent = game:GetService("CoreGui")
-end)
-
-if not FloatingGui.Parent then
-    FloatingGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-end
-
-local FloatingButton = Instance.new("ImageButton")
-
-FloatingButton.Name = "NETRIX"
-FloatingButton.Parent = FloatingGui
-
--- Pequeno e quadrado
-FloatingButton.Size = UDim2.fromOffset(58, 58)
-
-FloatingButton.Position =
-    UDim2.new(0, 20, 0.5, 0)
-
-FloatingButton.BackgroundColor3 =
-    Color3.fromRGB(12, 12, 12)
-
-FloatingButton.BackgroundTransparency = 0
-FloatingButton.BorderSizePixel = 0
-
--- Imagem
-FloatingButton.Image =
-    "rbxthumb://type=Asset&id=109965584967630&w=420&h=420"
-
-FloatingButton.ImageTransparency = 0
-FloatingButton.ScaleType = Enum.ScaleType.Crop
-
--- Cantos
-local FloatingCorner = Instance.new("UICorner")
-
-FloatingCorner.CornerRadius =
-    UDim.new(0, 10)
-
-FloatingCorner.Parent = FloatingButton
-
--- Borda
-local FloatingStroke = Instance.new("UIStroke")
-
-FloatingStroke.Thickness = 2
-FloatingStroke.Color =
-    Color3.fromRGB(145, 0, 255)
-
-FloatingStroke.Transparency = 0
-
-FloatingStroke.Parent = FloatingButton
-
--- =========================================================
--- ARRASTAR FLUTUANTE
--- =========================================================
-
-local Dragging = false
-local DragStart = nil
-local StartPosition = nil
-local Moved = false
-
-FloatingButton.InputBegan:Connect(function(Input)
-
-    if Input.UserInputType == Enum.UserInputType.Touch
-        or Input.UserInputType == Enum.UserInputType.MouseButton1 then
-
-        Dragging = true
-        Moved = false
-
-        DragStart = Input.Position
-        StartPosition = FloatingButton.Position
-
-        Input.Changed:Connect(function()
-
-            if Input.UserInputState ==
-                Enum.UserInputState.End then
-
-                Dragging = false
-
-            end
-
-        end)
-
-    end
-
-end)
-
-UserInputService.InputChanged:Connect(function(Input)
-
-    if not Dragging then
-        return
-    end
-
-    if Input.UserInputType ==
-        Enum.UserInputType.Touch
-
-        or Input.UserInputType ==
-        Enum.UserInputType.MouseMovement then
-
-        local Delta =
-            Input.Position - DragStart
-
-        if Delta.Magnitude > 5 then
-            Moved = true
-        end
-
-        FloatingButton.Position =
-            UDim2.new(
-                StartPosition.X.Scale,
-                StartPosition.X.Offset + Delta.X,
-
-                StartPosition.Y.Scale,
-                StartPosition.Y.Offset + Delta.Y
-            )
-
-    end
-
-end)
-
--- =========================================================
--- ABRIR / FECHAR PAINEL
--- =========================================================
-
-FloatingButton.Activated:Connect(function()
-
-    if Moved then
-        Moved = false
-        return
-    end
-
-    Rayfield:SetVisibility(
-        not Rayfield:IsVisible()
-    )
-
-end)
-
--- =========================================================
--- VARIÁVEIS
--- =========================================================
-
-local AimbotEnabled = false
+-- Variáveis de Estado
+local AimBotEnabled = false
+local ShowFOV = true
 local FOVRadius = 150
-local FOVVisible = true
 
-local GrabEnabled = false
-local TargetPlayer = nil
+local ESPBoxEnabled = false
+local ESPSkeletonEnabled = false
+local ESPLineEnabled = false
 
-local ESPEnabled = false
+local DiscordLink = "https://discord.gg/5TFHuucxgw"
+local YoutubeLink = "https://www.youtube.com/@Netrixofc"
 
-local ESPColor =
-    Color3.fromRGB(255, 0, 50)
+-- --- Interface Gráfica ---
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NetrixHubRoxo"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- =========================================================
--- ESP
--- =========================================================
+-- 1. Painel Principal (Inicia Visível)
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 260, 0, 260)
+MainFrame.Position = UDim2.new(0.5, -130, 0.5, -130)
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 15, 25)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Visible = true
+MainFrame.ClipsDescendants = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
 
-local function AddESP(player)
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Color = Color3.fromRGB(138, 43, 226)
+MainStroke.Thickness = 1.5
 
-    if player == LocalPlayer then
-        return
-    end
+-- 2. Botão Flutuante (Abre / Fecha Painel - Tamanho Aumentado)
+local FloatingButton = Instance.new("ImageButton", ScreenGui)
+FloatingButton.Name = "FloatingButton"
+FloatingButton.Size = UDim2.new(0, 48, 0, 48)
+FloatingButton.Position = UDim2.new(0.05, 0, 0.2, 0)
+FloatingButton.Image = "rbxthumb://type=Asset&id=109965584967630&w=420&h=420"
+FloatingButton.BackgroundColor3 = Color3.fromRGB(30, 0, 50)
+FloatingButton.Active = true
+FloatingButton.Draggable = true
+Instance.new("UICorner", FloatingButton).CornerRadius = UDim.new(0, 10)
 
-    local character =
-        player.Character
+local FloatStroke = Instance.new("UIStroke", FloatingButton)
+FloatStroke.Color = Color3.fromRGB(138, 43, 226)
+FloatStroke.Thickness = 1.5
 
-    if not character then
-        return
-    end
+FloatingButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
 
-    if character:FindFirstChild(
-        "NetrixESP"
-    ) then
-        return
-    end
+-- Título
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Text = "NETRIX HUB | Fluxo PVP"
+Title.Size = UDim2.new(1, 0, 0, 28)
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 13
 
-    local highlight =
-        Instance.new("Highlight")
+-- Barra de Navegação de Abas
+local TabBar = Instance.new("Frame", MainFrame)
+TabBar.Name = "TabBar"
+TabBar.Size = UDim2.new(0, 240, 0, 26)
+TabBar.Position = UDim2.new(0.04, 0, 0, 28)
+TabBar.BackgroundTransparency = 1
 
-    highlight.Name =
-        "NetrixESP"
+local TabList = Instance.new("UIListLayout", TabBar)
+TabList.FillDirection = Enum.FillDirection.Horizontal
+TabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+TabList.Padding = UDim.new(0, 6)
 
-    highlight.FillColor =
-        ESPColor
+local TabPVPBtn = Instance.new("TextButton", TabBar)
+TabPVPBtn.Size = UDim2.new(0.48, 0, 1, 0)
+TabPVPBtn.Text = "⚡ PVP"
+TabPVPBtn.Font = Enum.Font.GothamBold
+TabPVPBtn.TextSize = 11
+TabPVPBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+TabPVPBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", TabPVPBtn).CornerRadius = UDim.new(0, 5)
 
-    highlight.OutlineColor =
-        Color3.fromRGB(
-            255,
-            255,
-            255
-        )
+local TabRedesBtn = Instance.new("TextButton", TabBar)
+TabRedesBtn.Size = UDim2.new(0.48, 0, 1, 0)
+TabRedesBtn.Text = "🌐 Redes"
+TabRedesBtn.Font = Enum.Font.GothamBold
+TabRedesBtn.TextSize = 11
+TabRedesBtn.BackgroundColor3 = Color3.fromRGB(30, 28, 38)
+TabRedesBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+Instance.new("UICorner", TabRedesBtn).CornerRadius = UDim.new(0, 5)
 
-    highlight.FillTransparency = 0.5
-    highlight.OutlineTransparency = 0
+-- Containers das Abas
+local PVPFrame = Instance.new("ScrollingFrame", MainFrame)
+PVPFrame.Name = "PVPFrame"
+PVPFrame.Size = UDim2.new(1, 0, 1, -60)
+PVPFrame.Position = UDim2.new(0, 0, 0, 60)
+PVPFrame.BackgroundTransparency = 1
+PVPFrame.ScrollBarThickness = 2
+PVPFrame.ScrollBarImageColor3 = Color3.fromRGB(138, 43, 226)
+PVPFrame.CanvasSize = UDim2.new(0, 0, 0, 260)
+PVPFrame.Visible = true
 
-    highlight.DepthMode =
-        Enum.HighlightDepthMode.AlwaysOnTop
+local RedesFrame = Instance.new("ScrollingFrame", MainFrame)
+RedesFrame.Name = "RedesFrame"
+RedesFrame.Size = UDim2.new(1, 0, 1, -60)
+RedesFrame.Position = UDim2.new(0, 0, 0, 60)
+RedesFrame.BackgroundTransparency = 1
+RedesFrame.ScrollBarThickness = 2
+RedesFrame.ScrollBarImageColor3 = Color3.fromRGB(138, 43, 226)
+RedesFrame.CanvasSize = UDim2.new(0, 0, 0, 100)
+RedesFrame.Visible = false
 
-    highlight.Adornee =
-        character
+-- Layouts
+local PVPList = Instance.new("UIListLayout", PVPFrame)
+PVPList.SortOrder = Enum.SortOrder.LayoutOrder
+PVPList.Padding = UDim.new(0, 6)
+PVPList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-    highlight.Parent =
-        character
+local RedesList = Instance.new("UIListLayout", RedesFrame)
+RedesList.SortOrder = Enum.SortOrder.LayoutOrder
+RedesList.Padding = UDim.new(0, 6)
+RedesList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
+-- Troca de Abas
+TabPVPBtn.MouseButton1Click:Connect(function()
+    PVPFrame.Visible = true
+    RedesFrame.Visible = false
+    TabPVPBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+    TabPVPBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TabRedesBtn.BackgroundColor3 = Color3.fromRGB(30, 28, 38)
+    TabRedesBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+end)
+
+TabRedesBtn.MouseButton1Click:Connect(function()
+    PVPFrame.Visible = false
+    RedesFrame.Visible = true
+    TabRedesBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+    TabRedesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TabPVPBtn.BackgroundColor3 = Color3.fromRGB(30, 28, 38)
+    TabPVPBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+end)
+
+-- --- Criador de Switch Toggle ---
+local function CreateSwitch(name, order, defaultState, callback)
+    local state = defaultState
+
+    local btnFrame = Instance.new("TextButton", PVPFrame)
+    btnFrame.Size = UDim2.new(0.9, 0, 0, 32)
+    btnFrame.LayoutOrder = order
+    btnFrame.BackgroundColor3 = Color3.fromRGB(25, 23, 32)
+    btnFrame.Text = ""
+    btnFrame.AutoButtonColor = false
+    Instance.new("UICorner", btnFrame).CornerRadius = UDim.new(0, 6)
+
+    local label = Instance.new("TextLabel", btnFrame)
+    label.Size = UDim2.new(0.65, 0, 1, 0)
+    label.Position = UDim2.new(0.05, 0, 0, 0)
+    label.Text = name
+    label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    label.Font = Enum.Font.GothamMedium
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BackgroundTransparency = 1
+
+    local switchBG = Instance.new("Frame", btnFrame)
+    switchBG.Size = UDim2.new(0, 32, 0, 16)
+    switchBG.Position = UDim2.new(0.95, -32, 0.5, -8)
+    switchBG.BackgroundColor3 = state and Color3.fromRGB(138, 43, 226) or Color3.fromRGB(45, 42, 55)
+    Instance.new("UICorner", switchBG).CornerRadius = UDim.new(1, 0)
+
+    local switchStroke = Instance.new("UIStroke", switchBG)
+    switchStroke.Color = Color3.fromRGB(60, 55, 75)
+    switchStroke.Thickness = 1
+
+    local circle = Instance.new("Frame", switchBG)
+    circle.Size = UDim2.new(0, 12, 0, 12)
+    circle.Position = state and UDim2.new(1, -14, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)
+    circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
+
+    local tweenInfo = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+    btnFrame.MouseButton1Click:Connect(function()
+        state = not state
+        local targetPos = state and UDim2.new(1, -14, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)
+        local targetColor = state and Color3.fromRGB(138, 43, 226) or Color3.fromRGB(45, 42, 55)
+        
+        TweenService:Create(circle, tweenInfo, {Position = targetPos}):Play()
+        TweenService:Create(switchBG, tweenInfo, {BackgroundColor3 = targetColor}):Play()
+        
+        callback(state)
+    end)
 end
 
-local function RemoveESP(player)
+-- Slider FOV Compacto
+local SliderFrame = Instance.new("Frame", PVPFrame)
+SliderFrame.Size = UDim2.new(0.9, 0, 0, 32)
+SliderFrame.BackgroundColor3 = Color3.fromRGB(25, 23, 32)
+SliderFrame.LayoutOrder = 3
+Instance.new("UICorner", SliderFrame).CornerRadius = UDim.new(0, 6)
 
-    if player.Character then
+local SliderLabel = Instance.new("TextLabel", SliderFrame)
+SliderLabel.Size = UDim2.new(0.5, 0, 1, 0)
+SliderLabel.Position = UDim2.new(0.05, 0, 0, 0)
+SliderLabel.Text = "Tamanho FOV"
+SliderLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+SliderLabel.Font = Enum.Font.GothamMedium
+SliderLabel.TextSize = 13
+SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+SliderLabel.BackgroundTransparency = 1
 
-        local highlight =
-            player.Character:FindFirstChild(
-                "NetrixESP"
-            )
+local MinusBtn = Instance.new("TextButton", SliderFrame)
+MinusBtn.Size = UDim2.new(0, 20, 0, 20)
+MinusBtn.Position = UDim2.new(0.55, 0, 0.18, 0)
+MinusBtn.BackgroundColor3 = Color3.fromRGB(50, 45, 65)
+MinusBtn.Text = "-"
+MinusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinusBtn.Font = Enum.Font.GothamBold
+MinusBtn.TextSize = 12
+Instance.new("UICorner", MinusBtn).CornerRadius = UDim.new(0, 4)
 
-        if highlight then
-            highlight:Destroy()
+local FOVValText = Instance.new("TextLabel", SliderFrame)
+FOVValText.Size = UDim2.new(0, 36, 1, 0)
+FOVValText.Position = UDim2.new(0.65, 0, 0, 0)
+FOVValText.Text = tostring(FOVRadius) .. "px"
+FOVValText.TextColor3 = Color3.fromRGB(138, 43, 226)
+FOVValText.Font = Enum.Font.GothamBold
+FOVValText.TextSize = 11
+FOVValText.BackgroundTransparency = 1
+
+local PlusBtn = Instance.new("TextButton", SliderFrame)
+PlusBtn.Size = UDim2.new(0, 20, 0, 20)
+PlusBtn.Position = UDim2.new(0.85, 0, 0.18, 0)
+PlusBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+PlusBtn.Text = "+"
+PlusBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlusBtn.Font = Enum.Font.GothamBold
+PlusBtn.TextSize = 12
+Instance.new("UICorner", PlusBtn).CornerRadius = UDim.new(0, 4)
+
+MinusBtn.MouseButton1Click:Connect(function()
+    if FOVRadius > 30 then
+        FOVRadius = FOVRadius - 15
+        FOVValText.Text = tostring(FOVRadius) .. "px"
+    end
+end)
+
+PlusBtn.MouseButton1Click:Connect(function()
+    if FOVRadius < 400 then
+        FOVRadius = FOVRadius + 15
+        FOVValText.Text = tostring(FOVRadius) .. "px"
+    end
+end)
+
+-- Opções na Aba PVP
+CreateSwitch("Aimbot Cabeça", 1, false, function(s) AimBotEnabled = s end)
+CreateSwitch("Mostrar Círculo FOV", 2, true, function(s) ShowFOV = s end)
+CreateSwitch("ESP Box", 4, false, function(s) ESPBoxEnabled = s end)
+CreateSwitch("ESP Esqueleto", 5, false, function(s) ESPSkeletonEnabled = s end)
+CreateSwitch("ESP Line", 6, false, function(s) ESPLineEnabled = s end)
+
+-- Criador de Botões para a Aba Redes
+local function CreateSocialBtn(text, link, iconText)
+    local btn = Instance.new("TextButton", RedesFrame)
+    btn.Size = UDim2.new(0.9, 0, 0, 30)
+    btn.BackgroundColor3 = Color3.fromRGB(25, 23, 32)
+    btn.Text = iconText .. " " .. text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
+
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Color = Color3.fromRGB(138, 43, 226)
+    stroke.Thickness = 1
+
+    btn.MouseButton1Click:Connect(function()
+        if setclipboard then
+            setclipboard(link)
+        elseif toclipboard then
+            toclipboard(link)
         end
 
-    end
-
+        pcall(function()
+            StarterGui:SetCore("SendNotification", {
+                Title = "NETRIX",
+                Text = "Link do " .. text .. " copiado!",
+                Duration = 3
+            })
+        end)
+    end)
 end
 
-local function UpdateESP()
+CreateSocialBtn("Discord", DiscordLink, "💬")
+CreateSocialBtn("YouTube", YoutubeLink, "▶")
 
-    for _, player in
-        ipairs(Players:GetPlayers()) do
+-- --- Lógica Aimbot, FOV e ESPs ---
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+FOVCircle.Radius = FOVRadius
+FOVCircle.Color = Color3.fromRGB(0, 255, 255) -- Azul Ciano
+FOVCircle.Thickness = 1.5
+FOVCircle.Filled = false
 
-        if player ~= LocalPlayer then
+local Lines = {}
+local Skeletons = {}
+local Boxes = {}
 
-            if ESPEnabled then
-                AddESP(player)
-            else
-                RemoveESP(player)
-            end
+local function GetLine(player)
+    if not Lines[player] then
+        local line = Drawing.new("Line")
+        line.Color = Color3.fromRGB(0, 255, 255) -- Azul Ciano
+        line.Thickness = 1.5
+        line.Transparency = 1
+        Lines[player] = line
+    end
+    return Lines[player]
+end
 
+local function GetSkeleton(player)
+    if not Skeletons[player] then
+        local skel = {}
+        for i = 1, 10 do
+            local l = Drawing.new("Line")
+            l.Color = Color3.fromRGB(0, 255, 255) -- Azul Ciano
+            l.Thickness = 1.5
+            l.Transparency = 1
+            table.insert(skel, l)
         end
-
+        Skeletons[player] = skel
     end
-
+    return Skeletons[player]
 end
 
-local function SetupPlayerESP(player)
-
-    if player == LocalPlayer then
-        return
+local function GetBox(player)
+    if not Boxes[player] then
+        local box = Drawing.new("Square")
+        box.Color = Color3.fromRGB(0, 255, 255) -- Azul Ciano
+        box.Thickness = 1.5
+        box.Filled = false
+        box.Transparency = 1
+        Boxes[player] = box
     end
+    return Boxes[player]
+end
 
-    player.CharacterAdded:Connect(
-        function()
-
-            task.wait(0.5)
-
-            if ESPEnabled then
-                AddESP(player)
-            end
-
+local function HideSkeleton(skel)
+    if skel then
+        for _, l in ipairs(skel) do
+            l.Visible = false
         end
-    )
-
-    if ESPEnabled then
-        AddESP(player)
     end
-
 end
 
-for _, player in
-    ipairs(Players:GetPlayers()) do
-
-    SetupPlayerESP(player)
-
-end
-
-Players.PlayerAdded:Connect(
-    function(player)
-        SetupPlayerESP(player)
-    end
-)
-
-Players.PlayerRemoving:Connect(
-    function(player)
-        RemoveESP(player)
-    end
-)
-
--- =========================================================
--- FOV
--- =========================================================
-
-local FOVCircle = nil
-
-if Drawing and Drawing.new then
-
-    FOVCircle =
-        Drawing.new("Circle")
-
-    FOVCircle.Color =
-        Color3.fromRGB(
-            255,
-            0,
-            50
-        )
-
-    FOVCircle.Thickness = 2
-    FOVCircle.NumSides = 64
+RunService.RenderStepped:Connect(function()
+    FOVCircle.Visible = ShowFOV
+    FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     FOVCircle.Radius = FOVRadius
-    FOVCircle.Filled = false
-    FOVCircle.Visible = false
-
-end
-
--- =========================================================
--- ENCONTRAR PLAYER NO FOV
--- =========================================================
-
-local function GetClosestPlayerInFOV()
-
-    local closest = nil
-
-    local shortestDistance =
-        FOVRadius
-
-    for _, player in
-        ipairs(Players:GetPlayers()) do
-
-        if player ~= LocalPlayer
-            and player.Character
-            and player.Character:FindFirstChild(
-                "Head"
-            )
-            and player.Character:FindFirstChildOfClass(
-                "Humanoid"
-            ) then
-
-            local humanoid =
-                player.Character:FindFirstChildOfClass(
-                    "Humanoid"
-                )
-
-            if humanoid
-                and humanoid.Health > 0 then
-
-                local head =
-                    player.Character.Head
-
-                local screenPos, onScreen =
-                    Camera:WorldToViewportPoint(
-                        head.Position
-                    )
-
-                if onScreen then
-
-                    local mousePos =
-                        Vector2.new(
-                            Camera.ViewportSize.X / 2,
-                            Camera.ViewportSize.Y / 2
-                        )
-
-                    local distance =
-                        (
-                            Vector2.new(
-                                screenPos.X,
-                                screenPos.Y
-                            )
-                            - mousePos
-                        ).Magnitude
-
-                    if distance <
-                        shortestDistance then
-
-                        shortestDistance =
-                            distance
-
-                        closest =
-                            player
-
+    
+    -- Aimbot
+    if AimBotEnabled then
+        local TargetHead = nil
+        local NearestDist = FOVRadius
+        local CenterScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+        
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") and p.Character:FindFirstChildOfClass("Humanoid") then
+                if p.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
+                    local screenPos, onScreen = Camera:WorldToViewportPoint(p.Character.Head.Position)
+                    if onScreen then
+                        local dist = (Vector2.new(screenPos.X, screenPos.Y) - CenterScreen).Magnitude
+                        if dist < NearestDist then
+                            TargetHead = p.Character.Head
+                            NearestDist = dist
+                        end
                     end
+                end
+            end
+        end
+        
+        if TargetHead then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, TargetHead.Position)
+        end
+    end
+    
+    -- ESPs
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            local char = p.Character
+            
+            if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                local hrp = char.HumanoidRootPart
+                
+                -- ESP Box
+                local box = GetBox(p)
+                if ESPBoxEnabled and hum.Health > 0 then
+                    local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                    if onScreen then
+                        local headPos = Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0, 3, 0))
+                        local legPos = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3.5, 0))
+                        local height = math.abs(headPos.Y - legPos.Y)
+                        local width = height / 1.8
 
+                        box.Size = Vector2.new(width, height)
+                        box.Position = Vector2.new(hrpPos.X - width / 2, headPos.Y)
+                        box.Visible = true
+                    else
+                        box.Visible = false
+                    end
+                else
+                    box.Visible = false
                 end
 
+                -- ESP Esqueleto
+                local skel = GetSkeleton(p)
+                if ESPSkeletonEnabled and hum.Health > 0 then
+                    local joints = {
+                        {"Head", "UpperTorso"},
+                        {"UpperTorso", "LowerTorso"},
+                        {"UpperTorso", "LeftUpperArm"},
+                        {"LeftUpperArm", "LeftLowerArm"},
+                        {"UpperTorso", "RightUpperArm"},
+                        {"RightUpperArm", "RightLowerArm"},
+                        {"LowerTorso", "LeftUpperLeg"},
+                        {"LeftUpperLeg", "LeftLowerLeg"},
+                        {"LowerTorso", "RightUpperLeg"},
+                        {"RightUpperLeg", "RightLowerLeg"}
+                    }
+                    
+                    -- Suporte R6 / R15
+                    if not char:FindFirstChild("UpperTorso") then
+                        joints = {
+                            {"Head", "Torso"},
+                            {"Torso", "Left Arm"},
+                            {"Torso", "Right Arm"},
+                            {"Torso", "Left Leg"},
+                            {"Torso", "Right Leg"}
+                        }
+                    end
+
+                    for idx, pair in ipairs(joints) do
+                        local partA = char:FindFirstChild(pair[1])
+                        local partB = char:FindFirstChild(pair[2])
+                        local l = skel[idx]
+                        if partA and partB and l then
+                            local posA, visA = Camera:WorldToViewportPoint(partA.Position)
+                            local posB, visB = Camera:WorldToViewportPoint(partB.Position)
+                            if visA and visB then
+                                l.From = Vector2.new(posA.X, posA.Y)
+                                l.To = Vector2.new(posB.X, posB.Y)
+                                l.Visible = true
+                            else
+                                l.Visible = false
+                            end
+                        elseif l then
+                            l.Visible = false
+                        end
+                    end
+                else
+                    HideSkeleton(skel)
+                end
+
+                -- Line (Cima para Baixo)
+                local line = GetLine(p)
+                if ESPLineEnabled and hum.Health > 0 then
+                    local hrpPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                    if onScreen then
+                        line.From = Vector2.new(Camera.ViewportSize.X / 2, 0)
+                        line.To = Vector2.new(hrpPos.X, hrpPos.Y)
+                        line.Visible = true
+                    else
+                        line.Visible = false
+                    end
+                else
+                    line.Visible = false
+                end
+            else
+                if Boxes[p] then Boxes[p].Visible = false end
+                if Lines[p] then Lines[p].Visible = false end
+                if Skeletons[p] then HideSkeleton(Skeletons[p]) end
             end
-
         end
-
     end
+end)
 
-    return closest
-
-end
-
--- =========================================================
--- RENDER LOOP
--- =========================================================
-
-RunService.RenderStepped:Connect(
-    function()
-
-        if FOVCircle then
-
-            FOVCircle.Position =
-                Vector2.new(
-                    Camera.ViewportSize.X / 2,
-                    Camera.ViewportSize.Y / 2
-                )
-
-            FOVCircle.Radius =
-                FOVRadius
-
-            FOVCircle.Visible =
-                FOVVisible
-                and AimbotEnabled
-
-        end
-
-        -- AIMBOT
-        if AimbotEnabled then
-
-            local target =
-                GetClosestPlayerInFOV()
-
-            if target
-                and target.Character
-                and target.Character:FindFirstChild(
-                    "Head"
-                ) then
-
-                Camera.CFrame =
-                    CFrame.new(
-                        Camera.CFrame.Position,
-                        target.Character.Head.Position
-                    )
-
-            end
-
-        end
-
-        -- GRAB
-        if GrabEnabled then
-
-            if not TargetPlayer
-                or not TargetPlayer.Character
-                or not TargetPlayer.Character:FindFirstChild(
-                    "HumanoidRootPart"
-                )
-                or not TargetPlayer.Character:FindFirstChildOfClass(
-                    "Humanoid"
-                )
-                or TargetPlayer.Character:FindFirstChildOfClass(
-                    "Humanoid"
-                ).Health <= 0 then
-
-                TargetPlayer =
-                    GetClosestPlayerInFOV()
-
-            end
-
-            if TargetPlayer
-                and TargetPlayer.Character
-                and TargetPlayer.Character:FindFirstChild(
-                    "HumanoidRootPart"
-                )
-                and LocalPlayer.Character
-                and LocalPlayer.Character:FindFirstChild(
-                    "HumanoidRootPart"
-                ) then
-
-                LocalPlayer.Character.HumanoidRootPart.CFrame =
-                    TargetPlayer.Character.HumanoidRootPart.CFrame
-                    * CFrame.new(0, 0, -2)
-
-            end
-
-        end
-
+Players.PlayerRemoving:Connect(function(p)
+    if Boxes[p] then
+        Boxes[p]:Remove()
+        Boxes[p] = nil
     end
-)
-
--- =========================================================
--- ABA COMBATE
--- =========================================================
-
-local CombatTab =
-    Window:CreateTab(
-        "Combate",
-        4483362458
-    )
-
--- AIMBOT
-
-CombatTab:CreateToggle({
-
-    Name =
-        "Mira Automática na Cabeça",
-
-    CurrentValue = false,
-
-    Flag =
-        "AimbotHead",
-
-    Callback = function(Value)
-
-        AimbotEnabled =
-            Value
-
-    end,
-
-})
-
--- FOV
-
-CombatTab:CreateSlider({
-
-    Name =
-        "Tamanho do Círculo (FOV)",
-
-    Range = {
-        50,
-        500
-    },
-
-    Increment = 10,
-
-    Suffix = "px",
-
-    CurrentValue = 150,
-
-    Flag =
-        "FOVSize",
-
-    Callback = function(Value)
-
-        FOVRadius =
-            Value
-
-    end,
-
-})
-
--- MOSTRAR FOV
-
-CombatTab:CreateToggle({
-
-    Name =
-        "Mostrar Círculo na Tela",
-
-    CurrentValue = true,
-
-    Flag =
-        "DrawFOV",
-
-    Callback = function(Value)
-
-        FOVVisible =
-            Value
-
-    end,
-
-})
-
--- ESP
-
-CombatTab:CreateToggle({
-
-    Name =
-        "ESP Players",
-
-    CurrentValue = false,
-
-    Flag =
-        "ESPPlayers",
-
-    Callback = function(Value)
-
-        ESPEnabled =
-            Value
-
-        UpdateESP()
-
-    end,
-
-})
-
--- GRAB
-
-CombatTab:CreateToggle({
-
-    Name =
-        "Agarrar Player (Grab & Hold)",
-
-    CurrentValue = false,
-
-    Flag =
-        "GrabPlayer",
-
-    Callback = function(Value)
-
-        GrabEnabled =
-            Value
-
-        if not Value then
-            TargetPlayer = nil
+    if Lines[p] then
+        Lines[p]:Remove()
+        Lines[p] = nil
+    end
+    if Skeletons[p] then
+        for _, l in ipairs(Skeletons[p]) do
+            l:Remove()
         end
+        Skeletons[p] = nil
+    end
+end)
 
-    end,
-
-})
-
--- =========================================================
--- DISCORD
--- =========================================================
-
-CombatTab:CreateButton({
-
-    Name =
-        "Join Discord",
-
-    Callback = function()
-
-        local DiscordLink =
-            "https://discord.gg/5TFHuucxgw"
-
-        if setclipboard then
-
-            setclipboard(
-                DiscordLink
-            )
-
-            Rayfield:Notify({
-
-                Title =
-                    "NETRIX",
-
-                Content =
-                    "Link do Discord copiado!",
-
-                Duration = 5,
-
-                Image =
-                    4483362458,
-
-            })
-
-        else
-
-            Rayfield:Notify({
-
-                Title =
-                    "NETRIX",
-
-                Content =
-                    DiscordLink,
-
-                Duration = 5,
-
-                Image =
-                    4483362458,
-
-            })
-
-        end
-
-    end,
-
-})
-
--- =========================================================
--- ABA MOVIMENTAÇÃO
--- =========================================================
-
-local MovementTab =
-    Window:CreateTab(
-        "Movimentação",
-        4483362458
-    )
-
-MovementTab:CreateSlider({
-
-    Name =
-        "Velocidade (WalkSpeed)",
-
-    Range = {
-        16,
-        120
-    },
-
-    Increment = 2,
-
-    CurrentValue = 16,
-
-    Flag =
-        "WalkSpeed",
-
-    Callback = function(Value)
-
-        if LocalPlayer.Character
-            and LocalPlayer.Character:FindFirstChild(
-                "Humanoid"
-            ) then
-
-            LocalPlayer.Character.Humanoid.WalkSpeed =
-                Value
-
-        end
-
-    end,
-
-})
-
--- =========================================================
--- NOTIFICAÇÃO
--- =========================================================
-
-Rayfield:Notify({
-
-    Title =
-        "NETRIX",
-
-    Content =
-        "Painel Fluxo PVP carregado com sucesso!",
-
-    Duration = 5,
-
-    Image =
-        4483362458,
-
-})
